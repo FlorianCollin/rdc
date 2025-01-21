@@ -4,37 +4,32 @@
  */
 
 #include "mbed.h"
-#include <stdio.h>
+//#include <stdio.h>
 
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     500ms
 
 
+
+InterruptIn button(BUTTON1);
+DigitalOut led(LED1);
+
+void handler_rise() {
+    led = true;
+}
+void handler_fall() {
+    led = false;
+}
+
 int main()
 {
-    // Initialise the digital pin LED1 as an output
-#ifdef LED1
-    DigitalOut led(LED1);
-#else
-    bool led;
-#endif
-
-#ifdef BUTTON1
-    DigitalIn button(BUTTON1); // Bouton connecté à BUTTON1
-#else
-    bool button;
-#endif
-    
+    button.enable_irq();
+    button.rise(&handler_rise); 
+    button.fall(&handler_fall); 
     printf("Hello world\n");
+
     while (true) {
-        if (button) {
-            printf("Button pressed\n");
-            led = true;
-        } else {
-            led = false;
-        }
-       //led = !led;
         ThisThread::sleep_for(BLINKING_RATE);
     }
 }
