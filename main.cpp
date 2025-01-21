@@ -7,50 +7,58 @@
 using namespace std::chrono;
 
 // Blinking rate in milliseconds
-// #define BLINKING_RATE     500ms
 
 
-// InterruptIn button(BUTTON1);
+#define TIMESTAMP1 200ms
+#define TIMESTAMP2 50ms
+
+
+InterruptIn button(BUTTON1);
 DigitalOut led(LED1);
-// Timer t;
-
 Ticker flipper;
-// char flag_to_print;
-// float current_timer_delta;
+
+bool flag_change_t;
+bool switch_flag;
 
 
-// void handler_rise() {
-//     current_timer_delta = t.read_ms();
-// }
-// 
-// void handler_fall() {
-//     current_timer_delta = t.read_ms() - current_timer_delta;
-//     flag_to_print = 1;
-//     
-// }
 
+
+void handler_rise() { 
+    flag_change_t = true;
+}
 
 void flip() {
     led = !led;
 }
 
+
 int main()
 {
-    // flag_to_print = 0;
-    // t.start();
+    printf("Hello prg\n");
+    flag_change_t = false;
 
-    // button.enable_irq();
-    // button.rise(&handler_rise); 
-    // button.fall(&handler_fall); 
-    // printf("Hello world\n");
-    flipper.attach(&flip, 2.0);
-    while(true) {
+    button.rise(&handler_rise); 
+
+    flipper.attach(&flip, TIMESTAMP1);
+    switch_flag = false;   
+
+    while (true) {
+        if (flag_change_t) {
+            printf("Changement de fréqence\n");
+            flag_change_t = false;
+            flipper.detach();
+            if (switch_flag) {
+                printf("F1\n");
+                flipper.attach(flip, TIMESTAMP1);
+                switch_flag = false;
+            } else {
+                printf("F2\n");
+                switch_flag = true;
+                flipper.attach(flip, TIMESTAMP2);
+            }
+
+        }
+
+        ThisThread::sleep_for(50ms);
     }
-    // while (true) {
-    //     if (flag_to_print) {
-    //         flag_to_print = 0;
-    //         printf("timer : %f ms\n", current_timer_delta);
-    //     }
-    //     ThisThread::sleep_for(BLINKING_RATE);
-    // }
 }
