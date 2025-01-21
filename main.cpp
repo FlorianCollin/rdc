@@ -4,6 +4,7 @@
  */
 
 #include "mbed.h"
+#include <stdio.h>
 
 
 // Blinking rate in milliseconds
@@ -19,8 +20,21 @@ int main()
     bool led;
 #endif
 
+#ifdef BUTTON1
+    DigitalIn button(BUTTON1); // Bouton connecté à BUTTON1
+#else
+    bool button;
+#endif
+    
+    printf("Hello world\n");
     while (true) {
-        led = !led;
+        if (button) {
+            printf("Button pressed\n");
+            led = true;
+        } else {
+            led = false;
+        }
+       //led = !led;
         ThisThread::sleep_for(BLINKING_RATE);
     }
 }
