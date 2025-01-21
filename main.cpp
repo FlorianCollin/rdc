@@ -1,64 +1,58 @@
-/* mbed Microcontroller Library
- * Copyright (c) 2019 ARM Limited
+/*
+ * Copyright (c) 2021, Koncepto.io
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#include "htu21d/htu21d.h"
 #include "mbed.h"
-using namespace std::chrono;
 
-// Blinking rate in milliseconds
-
-
-#define TIMESTAMP1 200ms
-#define TIMESTAMP2 50ms
-
-
-InterruptIn button(BUTTON1);
-DigitalOut led(LED1);
-Ticker flipper;
-
-bool flag_change_t;
-bool switch_flag;
-
-
-
-
-void handler_rise() { 
-    flag_change_t = true;
+namespace {
+#define WAIT 1000ms
 }
 
-void flip() {
-    led = !led;
-}
+using namespace sixtron;
 
+static DigitalOut led1(LED1);
 
 int main()
 {
-    printf("Hello prg\n");
-    flag_change_t = false;
+    HTU21D::ErrorType err;
+    htud21d_user_reg_t reg;
+    HTU21D sensor(P1_I2C_SDA, P1_I2C_SCL);
+    double result;
 
-    button.rise(&handler_rise); 
+    sensor.soft_reset();
 
-    flipper.attach(&flip, TIMESTAMP1);
-    switch_flag = false;   
+    printf("\n\n----------------------\n");
+    printf("--- HTU21D(F) Demo ---\n");
+
+    err = sensor.read_user_register(&reg);
+
+    if (err == HTU21D::ErrorType::Ok) {
+        printf("User register status:\n");
+        printf("Battery low: %s\nHeater: %s\nOTP reload: %s\n\n",
+                reg.end_of_battery ? "TRUE" : "FALSE",
+                reg.enable_heater ? "ON" : "OFF",
+                reg.disable_otp_reload ? "DISABLED" : "ENABLED");
+
+        reg.resolution = MeasurementResolution::RH_12_Temp_14;
+        sensor.write_user_register(&reg);
+    }
 
     while (true) {
-        if (flag_change_t) {
-            printf("Changement de fréqence\n");
-            flag_change_t = false;
-            flipper.detach();
-            if (switch_flag) {
-                printf("F1\n");
-                flipper.attach(flip, TIMESTAMP1);
-                switch_flag = false;
-            } else {
-                printf("F2\n");
-                switch_flag = true;
-                flipper.attach(flip, TIMESTAMP2);
-            }
+        led1 = !led1;
 
+        printf("-----\n");
+
+        err = sensor.read_temperature(&result);
+        if (err == HTU21D::ErrorType::Ok) {
+            printf("Temperature: %f°C\n", result);
         }
 
-        ThisThread::sleep_for(50ms);
+        err = sensor.read_humidity(&result);
+        if (err == HTU21D::ErrorType::Ok) {
+            printf("Relative humidity: %f%%\n", result);
+        }
+
+        ThisThread::sleep_for(WAIT);
     }
 }
